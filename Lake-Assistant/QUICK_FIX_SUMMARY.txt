@@ -1,0 +1,48 @@
+===============================================
+LAKE-ASSISTANT BUG FIX - QUICK SUMMARY
+===============================================
+
+PROBLEM:
+--------
+App shows "please repeat" toast even though speech is recognized correctly
+
+ROOT CAUSE:
+-----------
+- Speech Recognition API was calling BOTH onResults() AND onError()
+- Valid partial results were being discarded on timeout
+- All errors treated the same (real errors vs soft timeouts)
+
+SOLUTION:
+---------
+✓ Added state tracking to prevent duplicate processing
+✓ Use partial results as fallback on soft errors  
+✓ Differentiate between real errors and soft errors
+✓ Increased error tolerance from 2 to 3 attempts
+
+MODIFIED FILES:
+--------------
+1. app/src/main/java/com/hey/lake/utilities/STTManager.kt
+   - Added hasProcessedResult flag
+   - Added lastPartialResult caching
+   - Smart fallback to partial results on ERROR_NO_MATCH and ERROR_SPEECH_TIMEOUT
+
+2. app/src/main/java/com/hey/lake/ConversationalAgentService.kt  
+   - Soft vs hard error detection
+   - Graceful restart on soft errors
+   - Increased maxSttErrorAttempts to 3
+
+TESTING:
+--------
+1. Speak normally → Should work without "please repeat"
+2. Speak with pauses → Should use partial results
+3. Test in noise → Should still work
+4. Test real errors → Should properly handle after 3 attempts
+
+BUILD:
+------
+1. Open in Android Studio
+2. Sync Gradle
+3. Build → Build APK
+4. Install and test
+
+See BUGFIX_REPORT.md for detailed technical explanation.
